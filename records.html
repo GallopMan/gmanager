@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>기록실</title>
+    <!-- Google Fonts: Oswald, Didact Gothic, Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Didact+Gothic&display=swap" rel="stylesheet">
+    <!-- html2canvas 라이브러리 (이미지 저장용) -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -542,6 +548,526 @@
             border-color: var(--field-green);
         }
 
+        /* 경기 상세 모달 */
+        .match-detail-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .match-detail-content {
+            background-color: white;
+            margin: 3% auto;
+            padding: 25px;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .match-detail-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-green);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* 배경 이미지 업로드 영역 */
+        .image-upload-section {
+            margin-bottom: 15px;
+        }
+
+        .image-upload-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--gray-light);
+            border: 2px dashed var(--gray-border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--primary-green);
+            transition: all 0.3s;
+        }
+
+        .image-upload-btn:hover {
+            border-color: var(--field-green);
+            background: #e8f5e9;
+        }
+
+        /* ========== 인스타그램 카드 ========== */
+        /* 비율: 100% = 1:1(정사각형), 125% = 4:5(세로형) */
+        .match-share-card {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            /* 기본 배경색 (이미지 없을 때) - 색상코드 변경 가능 */
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            margin-bottom: 15px;
+        }
+
+        .match-share-card-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 8%;
+        }
+
+        .match-share-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* ========== 오버레이 (배경 위 어두운 막) ========== */
+        .match-share-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 어둡기: 0(투명) ~ 1(완전검정), 0.125 = 12.5% 어둡게 */
+            background: rgba(0, 0, 0, 0.125);
+            z-index: 2;
+        }
+
+        /* ========== 전체 콘텐츠 영역 ========== */
+        .match-share-content {
+            position: absolute;
+            /* 상단 50%부터 시작 - 콘텐츠가 하단 50% 영역에만 위치 */
+            top: 50%;
+            left: 0;
+            z-index: 3;
+            width: 100%;
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            /* 세로 위치: flex-end(아래쪽에 배치) */
+            justify-content: flex-end;
+            /* 가로 위치: center(중앙) */
+            align-items: center;
+            text-align: center;
+            color: white;
+            /* 안쪽 여백: 좌우 8%, 하단 5% */
+            padding: 0 8% 5% 8%;
+            box-sizing: border-box;
+        }
+
+        /* ============================================================
+           팀 이름 영역 (예: "우리팀 VS 상대팀")
+           ============================================================ */
+        .match-share-teams {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            /* [팀이름] 아래 여백 - 마진 줄임 */
+            margin-bottom: 1%;
+        }
+
+        .match-share-team {
+            text-align: center;
+            flex: 1;
+        }
+
+        /* ------------------------------------------------------------
+           [팀 이름] 예: "FC서울", "수원삼성" 등
+           ------------------------------------------------------------ */
+        .match-share-team-name {
+            /* [팀이름] 글자 두께: 100(얇음) ~ 900(두꺼움) */
+            font-weight: 500;
+            /* [팀이름] 글자 색상 */
+            color: white;
+            /* [팀이름] 글자 크기: clamp(최소px, 화면비율, 최대px) */
+            font-size: clamp(14px, 4vw, 20px);
+            /* [팀이름] 그림자: X위치 Y위치 흐림정도 색상 */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ------------------------------------------------------------
+           [VS 텍스트] 팀 이름 사이의 "VS"
+           ------------------------------------------------------------ */
+        .match-share-vs {
+            /* [VS] 글자 크기 */
+            font-size: clamp(12px, 3vw, 18px);
+            /* [VS] 색상 - 투명도: 0(투명) ~ 1(불투명) */
+            color: rgba(255, 255, 255, 0.7);
+            /* [VS] 글자 두께 */
+            font-weight: 600;
+            /* [VS] 좌우 여백 - 팀이름과의 간격 */
+            padding: 0 10px;
+        }
+
+        /* ============================================================
+           스코어 영역 (예: "3 : 1")
+           ============================================================ */
+        .match-share-score-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* [스코어] 숫자와 ':' 사이 간격 - 2.5배로 늘림 (20px → 50px) */
+            gap: 50px;
+            /* [스코어] 아래 여백 - 팀이름 바로 위에 붙이기 위해 작게 */
+            margin-bottom: 1%;
+        }
+
+        /* ------------------------------------------------------------
+           [스코어 숫자] 예: "3", "1" 등 득점 숫자
+           ------------------------------------------------------------ */
+        .match-share-score-num {
+            /* [스코어숫자] 글자 크기 - 숫자 키우면 커짐 */
+            font-size: clamp(60px, 18vw, 100px);
+            /* [스코어숫자] 글자 두께: 900에서 40% 줄임 = 약 540 → 500 */
+            font-weight: 500;
+            /* [스코어숫자] 글자 색상 */
+            color: white;
+            /* [스코어숫자] 그림자 */
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            /* [스코어숫자] 세로로 길게 늘리기: scaleY(1.3) = 30% 세로 늘림 */
+            transform: scaleY(1.3);
+            display: inline-block;
+        }
+
+        /* ------------------------------------------------------------
+           [스코어 구분자] 숫자 사이의 ":" 기호
+           ------------------------------------------------------------ */
+        .match-share-score-divider {
+            /* [:기호] 크기 - 숫자보다 작게 설정 */
+            font-size: clamp(30px, 8vw, 50px);
+            /* [:기호] 두께 - 100~900, 낮을수록 얇음 */
+            font-weight: 300;
+            /* [:기호] 색상 - 살짝 투명하게 */
+            color: rgba(255, 255, 255, 0.7);
+            /* [:기호] 숫자와 같이 세로로 늘리기 */
+            transform: scaleY(1.3);
+            display: inline-block;
+        }
+
+        /* ============================================================
+           [1번 레이아웃] 팀이름 기준 중앙 위에 스코어 배치
+           ============================================================ */
+        .match-share-teams-with-score {
+            display: flex;
+            /* : 기호를 숫자 높이에 맞춤 (상단 정렬) */
+            align-items: flex-start;
+            justify-content: center;
+            /* 팀 컬럼과 : 사이 간격 - 2배 (30px → 60px) */
+            gap: 60px;
+            margin-bottom: 1%;
+        }
+
+        .match-share-team-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 스코어와 팀이름 사이 간격 - 10% 줄임 (10px → 9px) */
+            gap: 9px;
+        }
+
+        /* : 기호 위치 조정 (숫자 중앙에 맞춤) */
+        .match-share-teams-with-score .match-share-score-divider {
+            /* 숫자 높이의 약 절반 위치에 배치 */
+            margin-top: clamp(25px, 7vw, 40px);
+        }
+
+        /* ============================================================
+           [날짜] 예: "2024년 3월 15일"
+           ============================================================ */
+        .match-share-date {
+            /* [날짜] 글자 색상 - 살짝 투명 */
+            color: rgba(255, 255, 255, 0.8);
+            /* [날짜] 글자 크기 */
+            font-size: clamp(10px, 3vw, 14px);
+            /* [날짜] 위 여백 - 최소화 */
+            margin-top: 1%;
+            /* [날짜] 글자 두께 */
+            font-weight: 500;
+        }
+
+        .match-detail-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .match-detail-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-share-image {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-share-image:hover {
+            background: #1976D2;
+        }
+
+        .btn-close-detail {
+            background: #ddd;
+            color: #333;
+        }
+
+        .btn-close-detail:hover {
+            background: #ccc;
+        }
+
+        /* 글씨 색상 선택 */
+        .color-toggle-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .color-toggle-label {
+            font-weight: 600;
+            color: var(--primary-green);
+            font-size: 14px;
+        }
+
+        .color-toggle-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .color-btn.white {
+            background: white;
+            border-color: #ddd;
+        }
+
+        .color-btn.black {
+            background: #1a1a1a;
+            border-color: #333;
+        }
+
+        .color-btn.active {
+            border-color: var(--field-green);
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* [검은색 글씨 모드] - 밝은 배경 이미지용 */
+        .match-share-content.black-text .match-share-team-name,
+        .match-share-content.black-text .match-share-score-num,
+        .match-share-content.black-text .match-share-score-divider,
+        .match-share-content.black-text .match-share-date {
+            color: #1a1a1a;  /* 검은색 글씨 */
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);  /* 흰색 그림자 */
+        }
+
+        /* ============================================================
+           [레이아웃 선택] 1번(기본), 2번(로고 포함)
+           ============================================================ */
+        .layout-toggle-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .layout-toggle-label {
+            font-weight: 600;
+            color: var(--primary-green);
+            font-size: 14px;
+        }
+
+        .layout-toggle-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .layout-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-green);
+            transition: all 0.3s;
+        }
+
+        .layout-btn:hover {
+            border-color: var(--field-green);
+            background: #e8f5e9;
+        }
+
+        .layout-btn.active {
+            border-color: var(--field-green);
+            background: var(--field-green);
+            color: white;
+        }
+
+        /* 상대팀 로고 업로드 버튼 (2번 레이아웃용) */
+        .opponent-logo-section {
+            display: none;
+            margin-bottom: 15px;
+        }
+
+        .opponent-logo-section.show {
+            display: block;
+        }
+
+        .opponent-logo-btn {
+            width: 100%;
+            padding: 10px;
+            background: #fff3e0;
+            border: 2px dashed #ff9800;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #e65100;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .opponent-logo-btn:hover {
+            background: #ffe0b2;
+            border-color: #e65100;
+        }
+
+        /* ============================================================
+           [로고 스타일] 2번 레이아웃 - 로고가 스코어 숫자 옆에
+           ============================================================ */
+        .match-share-team-logo {
+            width: clamp(53px, 16vw, 93px);
+            height: clamp(53px, 16vw, 93px);
+            border-radius: 50%;
+            object-fit: contain;
+            background: transparent;
+        }
+
+        /* 2번 레이아웃: 스코어 행에 로고 포함 */
+        .match-share-score-row.layout2 {
+            /* 숫자그룹 - : - 숫자그룹 사이 간격 (기본 50px에서 20% 줄임) */
+            gap: 40px;
+        }
+
+        /* 로고+숫자 그룹 (로고와 숫자를 가깝게 묶음) */
+        .score-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* 로고를 숫자 중앙에 정렬 (숫자의 scaleY 고려) */
+        .score-group .match-share-team-logo {
+            align-self: center;
+        }
+
+        /* 로고는 원본 색상 그대로 표시 */
+        .match-share-team-logo {
+            filter: none;
+        }
+
+        /* ============================================================
+           [폰트 선택] Oswald, Didact Gothic, Poppins
+           ============================================================ */
+        .font-toggle-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .font-toggle-label {
+            font-weight: 600;
+            color: var(--primary-green);
+            font-size: 14px;
+        }
+
+        .font-toggle-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .font-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-green);
+            transition: all 0.3s;
+        }
+
+        .font-btn:hover {
+            border-color: var(--field-green);
+            background: #e8f5e9;
+        }
+
+        .font-btn.active {
+            border-color: var(--field-green);
+            background: var(--field-green);
+            color: white;
+        }
+
+        /* 폰트 적용 클래스 */
+        .match-share-content.font-oswald .match-share-score-num,
+        .match-share-content.font-oswald .match-share-score-divider,
+        .match-share-content.font-oswald .match-share-team-name,
+        .match-share-content.font-oswald .match-share-date {
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .match-share-content.font-didact .match-share-score-num,
+        .match-share-content.font-didact .match-share-score-divider,
+        .match-share-content.font-didact .match-share-team-name,
+        .match-share-content.font-didact .match-share-date {
+            font-family: 'Didact Gothic', sans-serif;
+        }
+
+        .match-share-content.font-poppins .match-share-score-num,
+        .match-share-content.font-poppins .match-share-score-divider,
+        .match-share-content.font-poppins .match-share-team-name,
+        .match-share-content.font-poppins .match-share-date {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Poppins 폰트일 때 스코어-팀이름 간격 - 10% 줄임 (3.5px → 3.15px) */
+        .match-share-content.font-poppins .match-share-team-column {
+            gap: 3.15px;
+        }
+
         /* 경기 추가 모달 */
         .match-modal {
             display: none;
@@ -820,6 +1346,71 @@
     </div>
 
     <div class="success-message" id="successMessage">저장되었습니다! ✓</div>
+
+    <!-- 경기 상세 모달 -->
+    <div id="matchDetailModal" class="match-detail-modal">
+        <div class="match-detail-content">
+            <div class="match-detail-header">인스타 경기 결과 만들기</div>
+
+            <!-- 배경 이미지 업로드 -->
+            <div class="image-upload-section">
+                <input type="file" id="bgImageInput" accept="image/*" style="display: none;" onchange="loadBackgroundImage(event)">
+                <button class="image-upload-btn" onclick="document.getElementById('bgImageInput').click()">
+                    배경 이미지 선택
+                </button>
+            </div>
+
+            <!-- 레이아웃 선택 (1번: 기본, 2번: 로고 포함) -->
+            <div class="layout-toggle-section">
+                <span class="layout-toggle-label">레이아웃:</span>
+                <div class="layout-toggle-btns">
+                    <button class="layout-btn active" onclick="setLayout(1)">1번 (기본)</button>
+                    <button class="layout-btn" onclick="setLayout(2)">2번 (로고)</button>
+                </div>
+            </div>
+
+            <!-- 상대팀 로고 업로드 (2번 레이아웃용) -->
+            <div class="opponent-logo-section" id="opponentLogoSection">
+                <input type="file" id="opponentLogoInput" accept="image/*" style="display: none;" onchange="loadOpponentLogo(event)">
+                <button class="opponent-logo-btn" onclick="document.getElementById('opponentLogoInput').click()">
+                    상대팀 로고 선택
+                </button>
+            </div>
+
+            <!-- 글씨 색상 선택 -->
+            <div class="color-toggle-section">
+                <span class="color-toggle-label">글씨 색상:</span>
+                <div class="color-toggle-btns">
+                    <button class="color-btn white active" onclick="setTextColor('white')" title="흰색"></button>
+                    <button class="color-btn black" onclick="setTextColor('black')" title="검은색"></button>
+                </div>
+            </div>
+
+            <!-- 폰트 선택 -->
+            <div class="font-toggle-section">
+                <span class="font-toggle-label">글꼴:</span>
+                <div class="font-toggle-btns">
+                    <button class="font-btn active" onclick="setFont('oswald')" style="font-family: 'Oswald', sans-serif;">Oswald</button>
+                    <button class="font-btn" onclick="setFont('didact')" style="font-family: 'Didact Gothic', sans-serif;">Didact</button>
+                    <button class="font-btn" onclick="setFont('poppins')" style="font-family: 'Poppins', sans-serif;">Poppins</button>
+                </div>
+            </div>
+
+            <!-- 인스타 피드 카드 (1:1 비율) -->
+            <div class="match-share-card" id="matchShareCard">
+                <img id="shareBgImage" class="match-share-bg" style="display: none;">
+                <div class="match-share-overlay" id="shareOverlay"></div>
+                <div class="match-share-content" id="shareContent">
+                    <!-- 경기 정보가 여기에 표시됩니다 -->
+                </div>
+            </div>
+
+            <div class="match-detail-buttons">
+                <button class="btn-share-image" onclick="shareAsImage()">이미지로 공유</button>
+                <button class="btn-close-detail" onclick="closeMatchDetailModal()">닫기</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 경기 추가 모달 -->
     <div id="matchModal" class="match-modal">
@@ -1357,7 +1948,7 @@
                 });
 
                 html += `
-                    <div class="match-item ${match.result}">
+                    <div class="match-item ${match.result}" onclick="openMatchDetail('${match.id}')" style="cursor: pointer;">
                         ${teamLogo}
                         <div class="match-team-name">${teamName}</div>
                         <div class="match-score">${match.myScore} : ${match.opponentScore}</div>
@@ -1387,10 +1978,279 @@
         // 모달 외부 클릭 시 닫기
         window.onclick = function(event) {
             const matchModal = document.getElementById('matchModal');
+            const matchDetailModal = document.getElementById('matchDetailModal');
             if (event.target === matchModal) {
                 closeMatchModal();
             }
+            if (event.target === matchDetailModal) {
+                closeMatchDetailModal();
+            }
         };
+
+        // === 경기 상세 모달 관련 함수 ===
+
+        let currentMatchData = null; // 현재 선택된 경기 데이터
+        let currentTextColor = 'white'; // 현재 글씨 색상
+        let currentFont = 'oswald'; // 현재 폰트
+        let currentLayout = 1; // 현재 레이아웃 (1: 기본, 2: 로고)
+        let opponentLogoData = null; // 상대팀 로고 데이터
+        let myTeamLogoData = null; // 우리팀 로고 데이터
+
+        // 레이아웃 설정
+        function setLayout(layout) {
+            currentLayout = layout;
+            const layoutBtns = document.querySelectorAll('.layout-btn');
+            const opponentLogoSection = document.getElementById('opponentLogoSection');
+
+            // 버튼 활성화 상태 변경
+            layoutBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 2번 레이아웃이면 상대팀 로고 업로드 버튼 표시
+            if (layout === 2) {
+                opponentLogoSection.classList.add('show');
+            } else {
+                opponentLogoSection.classList.remove('show');
+            }
+
+            // 카드 다시 렌더링
+            renderShareCard();
+        }
+
+        // 상대팀 로고 로드
+        function loadOpponentLogo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                opponentLogoData = e.target.result;
+                // 카드 다시 렌더링
+                renderShareCard();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 글씨 색상 설정
+        function setTextColor(color) {
+            currentTextColor = color;
+            const shareContent = document.getElementById('shareContent');
+            const colorBtns = document.querySelectorAll('.color-btn');
+
+            // 버튼 활성화 상태 변경
+            colorBtns.forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.color-btn.${color}`).classList.add('active');
+
+            // 글씨 색상 적용
+            if (color === 'black') {
+                shareContent.classList.add('black-text');
+            } else {
+                shareContent.classList.remove('black-text');
+            }
+        }
+
+        // 폰트 설정
+        function setFont(font) {
+            currentFont = font;
+            const shareContent = document.getElementById('shareContent');
+            const fontBtns = document.querySelectorAll('.font-btn');
+
+            // 버튼 활성화 상태 변경
+            fontBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 기존 폰트 클래스 제거
+            shareContent.classList.remove('font-oswald', 'font-didact', 'font-poppins');
+
+            // 새 폰트 클래스 추가
+            shareContent.classList.add('font-' + font);
+        }
+
+        // 경기 상세 모달 열기
+        function openMatchDetail(matchId) {
+            const season = seasons.find(s => s.id === currentSeasonId);
+            if (!season || !season.matches) return;
+
+            const match = season.matches.find(m => m.id === matchId);
+            if (!match) return;
+
+            // 팀 정보 가져오기
+            const teamInfo = localStorage.getItem('teamInfo');
+            let teamName = currentTeam ? currentTeam.teamName : '우리 팀';
+
+            if (teamInfo) {
+                const info = JSON.parse(teamInfo);
+                if (info.teamName) {
+                    teamName = info.teamName;
+                }
+            }
+
+            // 결과 텍스트
+            let resultText = '';
+            if (match.result === 'win') resultText = '승리';
+            else if (match.result === 'loss') resultText = '패배';
+            else resultText = '무승부';
+
+            // 날짜 포맷
+            const date = new Date(match.date);
+            const matchDate = date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // 우리팀 로고 가져오기
+            myTeamLogoData = null;
+            if (teamInfo) {
+                const info = JSON.parse(teamInfo);
+                if (info.logo) {
+                    myTeamLogoData = info.logo;
+                }
+            }
+
+            // 현재 경기 데이터 저장
+            currentMatchData = {
+                teamName: teamName,
+                opponent: match.opponent,
+                myScore: match.myScore,
+                opponentScore: match.opponentScore,
+                result: match.result,
+                resultText: resultText,
+                date: matchDate
+            };
+
+            // 상대팀 로고 초기화
+            opponentLogoData = null;
+
+            // 레이아웃 1번으로 초기화
+            currentLayout = 1;
+            document.querySelectorAll('.layout-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === 0);
+            });
+            document.getElementById('opponentLogoSection').classList.remove('show');
+
+            // 카드 내용 렌더링
+            renderShareCard();
+
+            // 배경 이미지 초기화
+            document.getElementById('shareBgImage').style.display = 'none';
+            document.getElementById('shareBgImage').src = '';
+
+            // 기본 폰트(Oswald) 적용
+            const shareContent = document.getElementById('shareContent');
+            shareContent.classList.add('font-oswald');
+
+            document.getElementById('matchDetailModal').style.display = 'block';
+        }
+
+        // 공유 카드 렌더링
+        function renderShareCard() {
+            if (!currentMatchData) return;
+
+            const shareContent = document.getElementById('shareContent');
+
+            // 레이아웃에 따라 다른 HTML 생성
+            if (currentLayout === 2) {
+                // 2번 레이아웃: 로고 + 스코어 (팀이름 없음)
+                // 로고가 숫자 바로 옆에 붙고, 숫자와 콜론 사이만 넓음
+                const myLogoHtml = myTeamLogoData
+                    ? `<img src="${myTeamLogoData}" class="match-share-team-logo" alt="우리팀 로고">`
+                    : '';
+                const opponentLogoHtml = opponentLogoData
+                    ? `<img src="${opponentLogoData}" class="match-share-team-logo" alt="상대팀 로고">`
+                    : '';
+
+                shareContent.innerHTML = `
+                    <div class="match-share-score-row layout2">
+                        <div class="score-group">${myLogoHtml}<span class="match-share-score-num">${currentMatchData.myScore}</span></div>
+                        <span class="match-share-score-divider">:</span>
+                        <div class="score-group"><span class="match-share-score-num">${currentMatchData.opponentScore}</span>${opponentLogoHtml}</div>
+                    </div>
+                    <div class="match-share-date">${currentMatchData.date}</div>
+                `;
+            } else {
+                // 1번 레이아웃: 기본 (로고 없음, 팀이름 있음)
+                // 팀이름 기준 중앙 위에 스코어 배치
+                shareContent.innerHTML = `
+                    <div class="match-share-teams-with-score">
+                        <div class="match-share-team-column">
+                            <span class="match-share-score-num">${currentMatchData.myScore}</span>
+                            <div class="match-share-team-name">${currentMatchData.teamName}</div>
+                        </div>
+                        <span class="match-share-score-divider">:</span>
+                        <div class="match-share-team-column">
+                            <span class="match-share-score-num">${currentMatchData.opponentScore}</span>
+                            <div class="match-share-team-name">${currentMatchData.opponent}</div>
+                        </div>
+                    </div>
+                    <div class="match-share-date">${currentMatchData.date}</div>
+                `;
+            }
+
+            // 현재 폰트 클래스 유지
+            shareContent.classList.remove('font-oswald', 'font-didact', 'font-poppins');
+            shareContent.classList.add('font-' + currentFont);
+
+            // 현재 색상 클래스 유지
+            if (currentTextColor === 'black') {
+                shareContent.classList.add('black-text');
+            } else {
+                shareContent.classList.remove('black-text');
+            }
+        }
+
+        // 배경 이미지 로드
+        function loadBackgroundImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const bgImage = document.getElementById('shareBgImage');
+                bgImage.src = e.target.result;
+                bgImage.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 경기 상세 모달 닫기
+        function closeMatchDetailModal() {
+            document.getElementById('matchDetailModal').style.display = 'none';
+            currentMatchData = null;
+        }
+
+        // 이미지로 공유
+        function shareAsImage() {
+            const shareCard = document.getElementById('matchShareCard');
+            const btn = document.querySelector('.btn-share-image');
+
+            // 버튼 비활성화 (중복 클릭 방지)
+            btn.disabled = true;
+            btn.textContent = '저장 중...';
+
+            html2canvas(shareCard, {
+                scale: 2,  // 고해상도 (1080x1080 출력)
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null
+            }).then(canvas => {
+                // 다운로드 링크 생성
+                const link = document.createElement('a');
+                const date = new Date().toISOString().slice(0, 10);
+                link.download = `경기결과_${date}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // 버튼 복구
+                btn.disabled = false;
+                btn.textContent = '이미지로 공유';
+            }).catch(err => {
+                console.error('이미지 저장 실패:', err);
+                alert('이미지 저장에 실패했습니다. 다시 시도해주세요.');
+                btn.disabled = false;
+                btn.textContent = '이미지로 공유';
+            });
+        }
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="auth.js"></script>
