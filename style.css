@@ -21,8 +21,10 @@ body {
 .top-menu {
     display: flex;
     justify-content: flex-end;
-    gap: 30px;
-    padding: 20px 40px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 40px;
+    height: 120px;
     background-color: #f0f0f0;
     border-bottom: 1px solid #ddd;
 }
@@ -30,13 +32,21 @@ body {
 .top-menu a {
     text-decoration: none;
     color: #333;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: color 0.3s;
+    padding: 8px 16px;
+    border-radius: 3px;
+    transition: all 0.25s;
 }
 
 .top-menu a:hover {
-    color: #666;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: none;
 }
 
 /* 메인 콘텐츠 */
@@ -287,28 +297,6 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.soccer-field::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 100%;
-    background-color: white;
-}
-
-.soccer-field::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80px;
-    height: 80px;
-    border: 2px solid white;
-    border-radius: 50%;
-}
 
 /* 필드의 골라인 */
 .soccer-field .goal-area {

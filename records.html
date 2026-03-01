@@ -1322,7 +1322,7 @@
         <!-- 경기 전적 -->
         <div class="match-records-section" id="matchRecordsSection">
             <div class="match-records-header">
-                <h3>⚽ 경기 전적</h3>
+                <h3>경기 전적</h3>
                 <button class="btn-add-match" onclick="openMatchModal()">+ 경기 추가</button>
             </div>
             <div class="match-list" id="matchList">
@@ -1592,7 +1592,7 @@
                 return;
             }
 
-            let html = '<h4>📋 저장된 시즌</h4>';
+            let html = '<h4>저장된 시즌</h4>';
 
             seasons.forEach(season => {
                 const isActive = currentSeasonId === season.id;

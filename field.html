@@ -191,7 +191,7 @@
             top: 50%;
             left: 50%;
             width: 20%;
-            aspect-ratio: 1;
+            height: 13.33%;
             border: 2px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
@@ -233,19 +233,7 @@
             border-top: none;
         }
 
-        /* 페널티 아크 (상단) */
-        .penalty-arc-top {
-            position: absolute;
-            top: 22%;
-            left: 50%;
-            width: 20%;
-            height: 10%;
-            border: 2px solid white;
-            border-top-left-radius: 50%;
-            border-top-right-radius: 50%;
-            border-bottom: none;
-            transform: translateX(-50%);
-        }
+        
 
         /* 페널티 점 (상단) */
         .penalty-spot-top {
@@ -283,19 +271,7 @@
             border-bottom: none;
         }
 
-        /* 페널티 아크 (하단) */
-        .penalty-arc-bottom {
-            position: absolute;
-            bottom: 22%;
-            left: 50%;
-            width: 20%;
-            height: 10%;
-            border: 2px solid white;
-            border-bottom-left-radius: 50%;
-            border-bottom-right-radius: 50%;
-            border-top: none;
-            transform: translateX(-50%);
-        }
+      
 
         /* 페널티 점 (하단) */
         .penalty-spot-bottom {
@@ -568,9 +544,8 @@
             <div class="field-section">
                 <div class="soccer-field" id="soccerField">
                     <div class="field-lines">
-                        <!-- 센터 서클과 점 -->
+                        <!-- 센터 서클 -->
                         <div class="center-circle"></div>
-                        <div class="center-dot"></div>
 
                         <!-- 상단 페널티 구역 -->
                         <div class="penalty-box-top"></div>
