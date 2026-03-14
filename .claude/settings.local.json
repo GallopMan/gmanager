@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote get-url origin)",
+      "Bash(curl -s \"https://api.github.com/repos/GallopMan/gmanager/pages\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''branch:'', d.get\\(''source'',{}\\).get\\(''branch''\\)\\); print\\(''path:'', d.get\\(''source'',{}\\).get\\(''path''\\)\\); print\\(''status:'', d.get\\(''status''\\)\\)\")"
+    ]
+  }
+}

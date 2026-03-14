@@ -110,13 +110,18 @@
         }
 
         .remove-player-btn {
-            padding: 8px 12px;
+            width: 30px;
+            height: 30px;
+            padding: 0;
             background-color: #ff6b6b;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
             transition: background 0.3s;
         }
 
@@ -127,18 +132,23 @@
         .add-player-btn {
             width: 100%;
             padding: 12px;
-            background-color: #5ba83f;
-            color: white;
-            border: none;
-            border-radius: 6px;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
             font-size: 16px;
-            transition: background 0.3s;
+            transition: box-shadow 0.25s, border-color 0.25s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .add-player-btn:hover {
-            background-color: #7bc34a;
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .bottom-section {
@@ -150,17 +160,21 @@
             padding: 15px 60px;
             font-size: 18px;
             font-weight: bold;
-            background-color: #2d5016;
-            color: white;
-            border: none;
-            border-radius: 8px;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: box-shadow 0.25s, border-color 0.25s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .start-btn:hover {
-            background-color: #5ba83f;
-            box-shadow: 0 4px 12px rgba(91, 168, 63, 0.3);
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .page-title {
@@ -175,6 +189,58 @@
             text-align: center;
             color: #666;
             margin-bottom: 30px;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 0;
+            align-items: flex-start;
+        }
+
+        .teams-wrapper { flex: 1; min-width: 0; }
+
+        .roster-panel {
+            width: 180px;
+            flex-shrink: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 18px;
+            margin: 0 20px 20px 0;
+            position: sticky;
+            top: 20px;
+        }
+
+        .roster-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d5016;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #5ba83f;
+        }
+
+        .roster-player {
+            padding: 9px 11px;
+            margin-bottom: 7px;
+            background: #f5f5f5;
+            border-radius: 7px;
+            border-left: 3px solid #5ba83f;
+            cursor: grab;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .roster-player:hover { background: #e8f5e9; transform: translateX(2px); }
+        .roster-player.dragging { opacity: 0.4; }
+
+        .players-list.drag-over {
+            background: #f0faf0;
+            outline: 2px dashed #5ba83f;
+            border-radius: 6px;
+            min-height: 40px;
         }
     </style>
 </head>
@@ -192,9 +258,18 @@
             <div class="page-subtitle">각 팀의 선수들을 입력하세요 (풋살: 5vs5)</div>
         </div>
 
-        <!-- 팀 컨테이너 -->
-        <div class="teams-container" id="teamsContainer">
-            <!-- 팀들이 여기에 동적으로 생성됩니다 -->
+        <!-- 레이아웃 -->
+        <div class="main-layout">
+            <div class="roster-panel" id="rosterPanel">
+                <div class="roster-title">🏃 기존 팀 선수</div>
+                <div id="rosterList"><p style="color:#999;font-size:12px;text-align:center">팀 데이터 없음</p></div>
+            </div>
+            <div class="teams-wrapper">
+                <!-- 팀 컨테이너 -->
+                <div class="teams-container" id="teamsContainer">
+                    <!-- 팀들이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </div>
         </div>
 
         <!-- 시작 버튼 -->
@@ -211,6 +286,8 @@
 
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', function() {
+            loadRoster();
+
             // 세션스토리지에서 팀 개수 가져오기
             teamCount = parseInt(sessionStorage.getItem('futsalTeamCount')) || 2;
             console.log('팀 개수:', teamCount);
@@ -222,6 +299,47 @@
             // 팀 초기화
             initializeTeams();
         });
+
+        function loadRoster() {
+            const rosterList = document.getElementById('rosterList');
+            const teamData = localStorage.getItem('teamSetup');
+            if (!teamData) return;
+            const team = JSON.parse(teamData);
+            if (!team.players || team.players.length === 0) return;
+
+            rosterList.innerHTML = team.players.map(p => `
+                <div class="roster-player" draggable="true" data-name="${p.name}">${p.name}</div>
+            `).join('');
+
+            rosterList.querySelectorAll('.roster-player').forEach(el => {
+                el.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', el.dataset.name);
+                    el.classList.add('dragging');
+                });
+                el.addEventListener('dragend', () => el.classList.remove('dragging'));
+            });
+        }
+
+        function setupTeamDropZone(teamIndex) {
+            const playersList = document.getElementById(`players-${teamIndex}`);
+            playersList.addEventListener('dragover', e => { e.preventDefault(); playersList.classList.add('drag-over'); });
+            playersList.addEventListener('dragleave', () => playersList.classList.remove('drag-over'));
+            playersList.addEventListener('drop', e => {
+                e.preventDefault();
+                playersList.classList.remove('drag-over');
+                const name = e.dataTransfer.getData('text/plain');
+                if (!name) return;
+                const playerCount = playersList.children.length + 1;
+                const playerRow = document.createElement('div');
+                playerRow.className = 'player-row';
+                playerRow.innerHTML = `
+                    <div class="player-number">${playerCount}.</div>
+                    <input type="text" class="player-input" value="${name}" data-team="${teamIndex}" data-number="${playerCount}">
+                    <button class="remove-player-btn" onclick="removePlayer(this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M9 6V4h6v2"/></svg></button>
+                `;
+                playersList.appendChild(playerRow);
+            });
+        }
 
         function initializeTeams() {
             const container = document.getElementById('teamsContainer');
@@ -235,6 +353,7 @@
 
                 const teamBox = createTeamBox(i);
                 container.appendChild(teamBox);
+                setupTeamDropZone(i);
             }
         }
 
@@ -263,7 +382,7 @@
             playerRow.innerHTML = `
                 <div class="player-number">${playerCount}.</div>
                 <input type="text" class="player-input" placeholder="선수 이름 입력" data-team="${teamIndex}" data-number="${playerCount}">
-                <button class="remove-player-btn" onclick="removePlayer(this)">삭제</button>
+                <button class="remove-player-btn" onclick="removePlayer(this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M9 6V4h6v2"/></svg></button>
             `;
 
             playersList.appendChild(playerRow);

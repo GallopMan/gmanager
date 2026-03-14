@@ -18,9 +18,10 @@
         }
 
         :root {
-            --primary-green: #2d5016;
-            --field-green: #5ba83f;
-            --light-green: #7bc34a;
+            --primary-green: #222222;
+            --field-green: #7cb97a;
+            --light-green: #9acf98;
+            --dark-green: #111111;
             --white: #ffffff;
             --gray-light: #f5f5f5;
             --gray-border: #ddd;
@@ -29,7 +30,9 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            background:
+                linear-gradient(rgba(255,255,255,0.75), rgba(255,255,255,0.75)),
+                url("ChatGPT Image 2026년 3월 3일 오전 12_58_50.png") center / cover fixed;
             min-height: 100vh;
             padding: 20px;
         }
@@ -94,7 +97,7 @@
         }
 
         .btn-edit {
-            background: var(--field-green);
+            background: #9e9e9e;
             color: white;
             width: 34px;
             height: 34px;
@@ -105,7 +108,7 @@
         }
 
         .btn-edit:hover {
-            background: var(--light-green);
+            background: #757575;
         }
 
         .btn-edit.active {
@@ -192,17 +195,27 @@
         .btn-create-season {
             flex: 1;
             padding: 12px;
-            background: var(--field-green);
-            color: white;
-            border: none;
-            border-radius: 6px;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s;
+            transition: box-shadow 0.25s, border-color 0.25s;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .btn-create-season:hover {
-            background: var(--light-green);
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-create-season:active {
+            background: #d0d0d0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
         /* 저장된 시즌 목록 */
@@ -224,21 +237,32 @@
             padding: 15px;
             background: var(--gray-light);
             border-radius: 8px;
-            border-left: 4px solid var(--field-green);
+            
             margin-bottom: 10px;
             cursor: pointer;
             transition: all 0.3s;
         }
 
         .season-item:hover {
-            background: #e8f5e9;
+            background: #e8eef7;
             transform: translateX(4px);
         }
 
         .season-item.active {
-            background: #e8f5e9;
-            border-left-color: var(--light-green);
-            box-shadow: 0 2px 8px rgba(91, 168, 63, 0.2);
+            background: rgba(124, 185, 122, 0.15);
+            
+            box-shadow:
+                inset 0 0 15px rgba(124,185,122,0.5),
+                inset 0 0 40px rgba(124,185,122,0.25);
+            transform: translateX(6px) scale(1.01);
+        }
+
+        .season-item.active .season-item-name {
+            color: #2d6e2b;
+        }
+
+        .season-item.active .season-item-date {
+            color: #4a8f48;
         }
 
         .season-item-info {
@@ -299,7 +323,7 @@
             background: var(--gray-light);
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid var(--field-green);
+            
         }
 
         .team-info-display h2 {
@@ -603,7 +627,7 @@
         }
 
         .row-edit-btn.editing {
-            background: #e8f5e9;
+            background: #e8eef7;
             color: var(--field-green);
         }
 
@@ -663,13 +687,18 @@
         }
 
         .btn-save-large {
-            background: var(--field-green);
-            color: white;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .btn-save-large:hover {
-            background: var(--light-green);
-            box-shadow: 0 4px 12px rgba(123, 195, 74, 0.3);
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .btn-cancel-large {
@@ -738,7 +767,7 @@
 
         .btn-add-match {
             padding: 8px 16px;
-            background: var(--field-green);
+            background: #9e9e9e;
             color: white;
             border: none;
             border-radius: 6px;
@@ -749,7 +778,7 @@
         }
 
         .btn-add-match:hover {
-            background: var(--light-green);
+            background: #757575;
         }
 
         .match-list {
@@ -768,7 +797,7 @@
         }
 
         .match-item.win {
-            background: #e8f5e9;
+            background: #e8eef7;
             border-left-color: #4caf50;
         }
 
@@ -838,7 +867,7 @@
         }
 
         .show-more-btn:hover {
-            background: #e8f5e9;
+            background: #e8eef7;
             border-color: var(--field-green);
         }
 
@@ -857,7 +886,7 @@
         }
 
         .show-more-players-btn:hover {
-            background: #e8f5e9;
+            background: #e8eef7;
             border-color: var(--field-green);
         }
 
@@ -911,7 +940,7 @@
 
         .image-upload-btn:hover {
             border-color: var(--field-green);
-            background: #e8f5e9;
+            background: #e8eef7;
         }
 
         /* ========== 인스타그램 카드 ========== */
@@ -925,6 +954,17 @@
             /* 기본 배경색 (이미지 없을 때) - 색상코드 변경 가능 */
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             margin-bottom: 15px;
+        }
+
+        .share-card-logo {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            height: 10%;
+            width: auto;
+            z-index: 10;
+            filter: brightness(0) invert(1);
+            opacity: 0.9;
         }
 
         .match-share-card-inner {
@@ -1047,7 +1087,7 @@
            ------------------------------------------------------------ */
         .match-share-score-num {
             /* [스코어숫자] 글자 크기 - 숫자 키우면 커짐 */
-            font-size: clamp(60px, 18vw, 100px);
+            font-size: clamp(54px, 16.2vw, 90px);
             /* [스코어숫자] 글자 두께: 900에서 40% 줄임 = 약 540 → 500 */
             font-weight: 500;
             /* [스코어숫자] 글자 색상 */
@@ -1237,7 +1277,7 @@
 
         .layout-btn:hover {
             border-color: var(--field-green);
-            background: #e8f5e9;
+            background: #e8eef7;
         }
 
         .layout-btn.active {
@@ -1345,7 +1385,7 @@
 
         .font-btn:hover {
             border-color: var(--field-green);
-            background: #e8f5e9;
+            background: #e8eef7;
         }
 
         .font-btn.active {
@@ -1495,12 +1535,18 @@
         }
 
         .btn-save-match {
-            background: var(--field-green);
-            color: white;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .btn-save-match:hover {
-            background: var(--light-green);
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .btn-cancel-match {
@@ -1722,6 +1768,7 @@
             <div class="match-share-card" id="matchShareCard">
                 <img id="shareBgImage" class="match-share-bg" style="display: none;">
                 <div class="match-share-overlay" id="shareOverlay"></div>
+                <img src="logo.png" class="share-card-logo" alt="logo">
                 <div class="match-share-content" id="shareContent">
                     <!-- 경기 정보가 여기에 표시됩니다 -->
                 </div>
@@ -2436,6 +2483,14 @@
                 shareContent.classList.add('black-text');
             } else {
                 shareContent.classList.remove('black-text');
+            }
+
+            // 로고 색상 연동
+            const logo = document.querySelector('.share-card-logo');
+            if (logo) {
+                logo.style.filter = color === 'black'
+                    ? 'brightness(0)'
+                    : 'brightness(0) invert(1)';
             }
         }
 

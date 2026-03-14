@@ -96,16 +96,22 @@
 
         .file-input-label {
             padding: 10px 20px;
-            background-color: #5ba83f;
-            color: white;
-            border-radius: 8px;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
-            transition: background 0.3s;
+            transition: box-shadow 0.25s, border-color 0.25s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .file-input-label:hover {
-            background-color: #7bc34a;
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .file-input {
@@ -172,17 +178,21 @@
             padding: 15px 60px;
             font-size: 18px;
             font-weight: bold;
-            background-color: #2d5016;
-            color: white;
-            border: none;
-            border-radius: 8px;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: box-shadow 0.25s, border-color 0.25s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .save-btn:hover {
-            background-color: #5ba83f;
-            box-shadow: 0 4px 12px rgba(91, 168, 63, 0.3);
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .cancel-btn {
@@ -230,11 +240,9 @@
 </head>
 <body>
     <div class="container">
-        <!-- 상단 메뉴 -->
-        <div class="top-menu">
-            <a href="index.html">메인</a>
-            <a href="records.html">기록실</a>
-            <a href="login.html" class="login-link">로그인</a>
+        <!-- 뒤로가기 -->
+        <div style="position:fixed; top:16px; right:20px; z-index:100;">
+            <a href="index.html" style="padding:8px 18px; background:#ddd; color:#333; border-radius:6px; text-decoration:none; font-size:14px; font-weight:600;">← 뒤로가기</a>
         </div>
 
         <div class="page-container">

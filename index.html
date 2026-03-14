@@ -37,10 +37,33 @@
         .modal-header {
             font-size: 24px;
             font-weight: bold;
-            color: #2d5016;
+            color: #111;
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 2px solid #5ba83f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close-x {
+            width: 30px;
+            height: 30px;
+            background: #eee;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .modal-close-x:hover {
+            background: #ddd;
+            color: #111;
         }
 
         .modal-body {
@@ -56,7 +79,7 @@
         }
 
         .team-info-box h3 {
-            color: #2d5016;
+            color: #111;
             margin-bottom: 10px;
             font-size: 18px;
             display: flex;
@@ -93,7 +116,7 @@
         }
 
         .players-section h4 {
-            color: #2d5016;
+            color: #111;
             margin-bottom: 10px;
             padding-bottom: 8px;
             border-bottom: 2px solid #5ba83f;
@@ -118,21 +141,26 @@
         }
 
         .player-number {
-            background: #5ba83f;
-            color: white;
             width: 32px;
             height: 32px;
             border-radius: 50%;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
             margin-right: 10px;
-            font-size: 13px;
+            flex-shrink: 0;
+            background: transparent;
+        }
+
+        .player-number img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .player-name {
-            color: #2d5016;
+            color: #111;
             font-weight: 600;
             font-size: 14px;
         }
@@ -162,7 +190,7 @@
 
         .modal-close {
             background: #ddd;
-            color: #2d5016;
+            color: #111;
         }
 
         .modal-close:hover {
@@ -172,6 +200,7 @@
         .modal-edit {
             background: #5ba83f;
             color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .modal-edit:hover {
@@ -179,12 +208,13 @@
         }
 
         .modal-auto {
-            background: #2196F3;
+            background: #5ba83f;
             color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .modal-auto:hover {
-            background: #0b7dda;
+            background: #7bc34a;
         }
 
         @keyframes fadeIn {
@@ -293,7 +323,7 @@
         <!-- 메인 히어로 섹션 -->
         <div class="hero-section">
             <!-- 배경 이미지 -->
-            <img class="hero-bg" src="ChatGPT Image 2026년 3월 2일 오전 02_10_25.png" alt="배경">
+            <img class="hero-bg" src="ChatGPT Image 2026년 3월 3일 오전 12_48_04.png" alt="배경">
             <!-- 흰색 오버레이 -->
             <div class="hero-overlay"></div>
             <!-- 콘텐츠 -->
@@ -314,7 +344,10 @@
     <!-- 나의팀 모달 -->
     <div id="myTeamModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">나의 팀</div>
+            <div class="modal-header">
+                <span>나의 팀</span>
+                <button class="modal-close-x" onclick="document.getElementById('myTeamModal').style.display='none'">✕</button>
+            </div>
             <div class="modal-body" id="modalBody">
                 <!-- 팀 정보가 여기에 표시됩니다 -->
             </div>
@@ -369,7 +402,7 @@
                     onFieldPlayers.forEach(player => {
                         html += `
                             <div class="player-item">
-                                <div class="player-number">${player.number}</div>
+                                <div class="player-number">${teamLogo || player.number}</div>
                                 <div class="player-name">${player.name}</div>
                             </div>
                         `;
@@ -391,7 +424,7 @@
                     subPlayers.forEach(player => {
                         html += `
                             <div class="player-item">
-                                <div class="player-number">${player.number}</div>
+                                <div class="player-number">${teamLogo || player.number}</div>
                                 <div class="player-name">${player.name}</div>
                             </div>
                         `;

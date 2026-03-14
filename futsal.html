@@ -51,9 +51,10 @@
         }
 
         .team-count-btn.selected {
-            background-color: #5ba83f;
-            color: white;
-            border-color: #5ba83f;
+            background: #f0f0f0;
+            color: #444;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .method-selection {
@@ -79,13 +80,18 @@
         }
 
         .manual-btn {
-            background-color: #5ba83f;
-            color: white;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .manual-btn:hover {
-            background-color: #7bc34a;
-            box-shadow: 0 4px 12px rgba(91, 168, 63, 0.3);
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .auto-btn {
@@ -110,8 +116,7 @@
         <!-- 상단 메뉴 -->
         <div class="top-menu">
             <a href="index.html">메인</a>
-            <a href="records.html">기록실</a>
-            <a href="login.html" class="login-link">로그인</a>
+            <a href="javascript:history.back()">뒤로가기</a>
         </div>
 
         <!-- 메인 콘텐츠 -->

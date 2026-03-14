@@ -64,26 +64,31 @@
 
         .generate-btn {
             padding: 12px 40px;
-            background-color: #5ba83f;
-            color: white;
-            border: none;
-            border-radius: 8px;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: box-shadow 0.25s, border-color 0.25s;
             margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .generate-btn:hover {
-            background-color: #7bc34a;
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
         }
 
         .teams-result {
             display: grid;
-            gap: 30px;
+            gap: 20px;
             padding: 40px 20px;
-            max-width: 1400px;
+            max-width: 910px;
             margin: 0 auto;
         }
 
@@ -204,21 +209,61 @@
             padding: 15px 60px;
             font-size: 18px;
             font-weight: bold;
-            background-color: #2d5016;
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: box-shadow 0.25s, border-color 0.25s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .restart-btn:hover {
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+            color: #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .lock-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 3px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s, transform 0.15s;
+            flex-shrink: 0;
+        }
+
+        .lock-btn:hover { color: #999; transform: scale(1.15); }
+        .lock-btn.locked { color: #5ba83f; }
+        .lock-btn.locked:hover { color: #4a9030; }
+
+        .player-item.locked-row {}
+
+        .reshuffle-btn {
+            padding: 15px 50px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #4a6fa5;
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
+            margin-right: 16px;
         }
 
-        .restart-btn:hover {
-            background-color: #5ba83f;
-            box-shadow: 0 4px 12px rgba(91, 168, 63, 0.3);
-        }
-
-        .hidden {
-            display: none;
+        .reshuffle-btn:hover {
+            background-color: #3a5f95;
+            box-shadow: 0 4px 12px rgba(74,111,165,0.3);
         }
     </style>
 </head>
@@ -227,7 +272,7 @@
         <!-- 상단 메뉴 -->
         <div class="top-menu">
             <a href="index.html">메인</a>
-            <a href="futsal.html">처음부터</a>
+            <a href="javascript:history.back()">뒤로가기</a>
         </div>
 
         <!-- 헤더 -->
@@ -252,6 +297,7 @@
 
         <!-- 버튼 -->
         <div class="bottom-section hidden" id="bottomSection">
+            <button class="reshuffle-btn" onclick="reshuffleTeams()">다시 돌리기</button>
             <button class="restart-btn" onclick="location.href='futsal.html'">처음으로</button>
         </div>
     </div>
@@ -261,6 +307,8 @@
         const teamClasses = ['team-a', 'team-b', 'team-c', 'team-d'];
         let players = [];
         let teamCount = 0;
+        let currentTeams = [];
+        let lockedPlayers = new Map(); // playerNumber -> teamIndex
 
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', function() {
@@ -355,13 +403,14 @@
         }
 
         function displayTeams(teams) {
+            currentTeams = teams;
             const container = document.getElementById('teamsResult');
             container.className = `teams-result count-${teamCount}`;
             container.innerHTML = '';
 
-            teams.forEach((team, index) => {
+            teams.forEach((team, teamIndex) => {
                 const teamBox = document.createElement('div');
-                teamBox.className = `team-box ${teamClasses[index]}`;
+                teamBox.className = `team-box ${teamClasses[teamIndex]}`;
 
                 teamBox.innerHTML = `
                     <div class="team-header">${team.name}</div>
@@ -371,22 +420,93 @@
                         <div class="stat-label" style="margin-top: 10px;">총 ${team.players.length}명</div>
                     </div>
                     <div class="player-list">
-                        ${team.players.map(player => `
-                            <div class="player-item">
+                        ${team.players.map(player => {
+                            const isLocked = lockedPlayers.has(player.number);
+                            return `
+                            <div class="player-item${isLocked ? ' locked-row' : ''}" id="row-${player.number}">
                                 <div class="player-info">
+                                    <button class="lock-btn${isLocked ? ' locked' : ''}" id="lock-${player.number}" onclick="toggleLock(${player.number}, ${teamIndex})" title="팀 고정">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            ${isLocked
+                                                ? '<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>'
+                                                : '<path d="M12 1C9.24 1 7 3.24 7 6v1H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2h-1V6c0-2.76-2.24-5-5-5zm0 2c1.66 0 3 1.34 3 3v1H9V6c0-1.66 1.34-3 3-3zm0 9c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/>'}
+                                        </svg>
+                                    </button>
                                     <div class="player-number">${player.number}</div>
                                     <div class="player-name">${player.name}</div>
                                 </div>
                                 <div class="player-stars">
                                     ${getStarsHTML(player.rating)}
                                 </div>
-                            </div>
-                        `).join('')}
+                            </div>`;
+                        }).join('')}
                     </div>
                 `;
 
                 container.appendChild(teamBox);
             });
+        }
+
+        function toggleLock(playerNumber, teamIndex) {
+            if (lockedPlayers.has(playerNumber)) {
+                lockedPlayers.delete(playerNumber);
+            } else {
+                lockedPlayers.set(playerNumber, teamIndex);
+            }
+            displayTeams(currentTeams);
+        }
+
+        function reshuffleTeams() {
+            // Separate locked and unlocked players
+            const locked = []; // { player, teamIndex }
+            const unlocked = [];
+
+            currentTeams.forEach((team, teamIndex) => {
+                team.players.forEach(player => {
+                    if (lockedPlayers.has(player.number)) {
+                        locked.push({ player, teamIndex });
+                    } else {
+                        unlocked.push(player);
+                    }
+                });
+            });
+
+            // Shuffle unlocked players
+            for (let i = unlocked.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [unlocked[i], unlocked[j]] = [unlocked[j], unlocked[i]];
+            }
+
+            // Build new teams with locked players first
+            const newTeams = Array.from({ length: teamCount }, (_, i) => ({
+                name: teamNames[i],
+                players: [],
+                totalRating: 0,
+                avgRating: 0
+            }));
+
+            locked.forEach(({ player, teamIndex }) => {
+                newTeams[teamIndex].players.push(player);
+                newTeams[teamIndex].totalRating += player.rating;
+            });
+
+            // Assign unlocked players greedily to lowest-rated team
+            unlocked.forEach(player => {
+                let minIdx = 0;
+                for (let i = 1; i < teamCount; i++) {
+                    if (newTeams[i].totalRating < newTeams[minIdx].totalRating) minIdx = i;
+                }
+                newTeams[minIdx].players.push(player);
+                newTeams[minIdx].totalRating += player.rating;
+            });
+
+            newTeams.forEach(team => {
+                team.avgRating = team.players.length > 0
+                    ? (team.totalRating / team.players.length).toFixed(2)
+                    : 0;
+            });
+
+            displayTeams(newTeams);
         }
 
         function getStarsHTML(rating) {

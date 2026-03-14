@@ -3,6 +3,7 @@
 let players = [];
 let fieldPlayers = [];
 let subPlayers = [];
+let reservePlayers = [];
 let draggedElement = null;
 let dragSource = null;
 
@@ -35,9 +36,6 @@ function initializeField() {
     const teamDataStr = localStorage.getItem('currentTeam');
     const teamNameStr = localStorage.getItem('currentTeamName');
 
-    console.log('저장된 팀 데이터:', teamDataStr);
-    console.log('저장된 팀 이름:', teamNameStr);
-
     let teamData = null;
     try {
         teamData = JSON.parse(teamDataStr);
@@ -45,7 +43,6 @@ function initializeField() {
         console.log('팀 데이터 파싱 오류:', e);
     }
 
-    // 팀 데이터가 없으면 빈 배열로 시작
     if (!teamData) {
         players = [];
     } else {
@@ -61,41 +58,33 @@ function initializeField() {
         teamNameDisplay.textContent = teamNameStr;
     }
 
-    // 저장된 배치가 있는지 확인
+    // 저장된 배치 로드
     const savedSetup = localStorage.getItem('teamSetup');
     if (savedSetup) {
         try {
             const setup = JSON.parse(savedSetup);
-            if (setup.fieldPlayers && setup.subPlayers) {
-                fieldPlayers = setup.fieldPlayers.map(p => ({
-                    ...p,
-                    id: p.number
-                }));
-                subPlayers = setup.subPlayers.map(p => ({
-                    ...p,
-                    id: p.number
-                }));
+            if (setup.fieldPlayers) {
+                fieldPlayers = setup.fieldPlayers.map(p => ({ ...p, id: p.number }));
+                subPlayers = (setup.subPlayers || []).map(p => ({ ...p, id: p.number }));
+                reservePlayers = (setup.reservePlayers || []).map(p => ({ ...p, id: p.number }));
                 console.log('저장된 배치 로드 완료');
             } else {
-                // 처음 설정: 모든 선수를 SUB에 배치
                 fieldPlayers = [];
-                subPlayers = [...players];
+                subPlayers = [];
+                reservePlayers = [...players];
             }
         } catch (e) {
             console.log('저장된 배치 로드 실패:', e);
             fieldPlayers = [];
-            subPlayers = [...players];
+            subPlayers = [];
+            reservePlayers = [...players];
         }
     } else {
-        // 처음 설정: 모든 선수를 SUB에 배치
         fieldPlayers = [];
-        subPlayers = [...players];
+        subPlayers = [];
+        reservePlayers = [...players];
     }
 
-    console.log('필드 선수:', fieldPlayers);
-    console.log('SUB 선수:', subPlayers);
-
-    // UI 업데이트
     updateFieldPlayers();
     updateSubPlayers();
     setupFieldDragDrop();
@@ -105,61 +94,168 @@ function initializeField() {
 // 필드 선수 업데이트
 function updateFieldPlayers() {
     const field = document.getElementById('soccerField');
-    if (!field) {
-        console.log('soccerField를 찾을 수 없습니다.');
-        return;
-    }
+    if (!field) return;
 
-    // 기존 플레이어 원 제거
     field.querySelectorAll('.player-circle').forEach(el => el.remove());
 
-    console.log('필드에 표시할 선수 수:', fieldPlayers.length);
-
-    // 필드에 있는 선수들 표시
     fieldPlayers.forEach((player) => {
         const circle = createPlayerCircle(player);
         field.appendChild(circle);
     });
 }
 
-// SUB 선수 업데이트
+// 선수 명단 패널 업데이트 (선발/교체/후보 3그룹)
 function updateSubPlayers() {
-    const subSection = document.getElementById('subPlayers');
-    if (!subSection) {
-        console.log('subPlayers를 찾을 수 없습니다.');
-        return;
+    const container = document.getElementById('subPlayers');
+    if (!container) return;
+    container.innerHTML = '';
+
+    container.appendChild(createRosterSection('선발', fieldPlayers, false));
+    container.appendChild(createRosterSection('교체', subPlayers, true));
+    container.appendChild(createRosterSection('후보', reservePlayers, true));
+}
+
+// 로스터 섹션 생성
+function createRosterSection(label, playerList, deletable) {
+    const groupClass = label === '선발' ? 'starter' : label === '교체' ? 'sub' : 'reserve';
+    const section = document.createElement('div');
+    section.className = 'roster-group';
+    section.dataset.group = groupClass;
+
+    const header = document.createElement('div');
+    header.className = `roster-group-header roster-${groupClass}`;
+    header.textContent = `${label} (${playerList.length}명)`;
+    section.appendChild(header);
+
+    if (playerList.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'roster-empty';
+        empty.textContent = '없음';
+        section.appendChild(empty);
     }
 
-    subSection.innerHTML = '';
+    playerList.forEach(player => {
+        const item = document.createElement('div');
+        item.className = 'roster-player-item';
+        item.draggable = true;
+        item.dataset.playerId = player.id;
 
-    console.log('SUB에 표시할 선수 수:', subPlayers.length);
+        const roleBadge = document.createElement('span');
+        roleBadge.className = `roster-role-badge role-${groupClass}`;
+        roleBadge.textContent = label;
+        item.appendChild(roleBadge);
 
-    // SUB가 비어있을 때 메시지 표시
-    if (subPlayers.length === 0) {
-        subSection.innerHTML = '<p style="text-align: center; color: #999; padding: 20px; font-size: 14px;">교대 선수가 없습니다.<br>필드의 선수를 여기로 드래그하세요.</p>';
-    }
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'roster-player-name';
+        nameSpan.textContent = player.name;
+        item.appendChild(nameSpan);
 
-    subPlayers.forEach(player => {
-        const playerItem = document.createElement('div');
-        playerItem.className = 'sub-player-item';
-        playerItem.draggable = true;
-        playerItem.textContent = `${player.number}. ${player.name}`;
-        playerItem.dataset.playerId = player.id;
-
-        playerItem.addEventListener('dragstart', (e) => {
+        // 모든 선수 드래그 가능
+        item.addEventListener('dragstart', (e) => {
             draggedElement = player;
-            dragSource = 'sub';
+            dragSource = groupClass;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('playerId', player.id);
-            playerItem.classList.add('dragging');
+            item.classList.add('dragging');
         });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
 
-        playerItem.addEventListener('dragend', () => {
-            playerItem.classList.remove('dragging');
-        });
+        // 교체/후보만 삭제 버튼
+        if (deletable) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'roster-delete-btn';
+            deleteBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deletePlayer(player.id, groupClass === 'sub' ? 'sub' : 'reserve');
+            };
+            item.appendChild(deleteBtn);
+        }
 
-        subSection.appendChild(playerItem);
+        section.appendChild(item);
     });
+
+    // 섹션을 드롭 타겟으로 설정
+    section.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        section.style.outline = '2px dashed #aaa';
+        section.style.borderRadius = '6px';
+    });
+
+    section.addEventListener('dragleave', (e) => {
+        if (!section.contains(e.relatedTarget)) {
+            section.style.outline = '';
+        }
+    });
+
+    section.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        section.style.outline = '';
+
+        if (!draggedElement) return;
+        if (dragSource === groupClass) return; // 같은 그룹이면 무시
+
+        movePlayerToRosterGroup(draggedElement, dragSource, groupClass);
+
+        draggedElement = null;
+        dragSource = null;
+
+        updateFieldPlayers();
+        updateSubPlayers();
+        updateTotalPlayers();
+    });
+
+    return section;
+}
+
+// 선수를 특정 그룹으로 이동
+function movePlayerToRosterGroup(player, fromSource, toGroup) {
+    if (fromSource === toGroup) return;
+
+    // 현재 그룹에서 제거
+    if (fromSource === 'field' || fromSource === 'starter') {
+        const idx = fieldPlayers.findIndex(p => p.id === player.id);
+        if (idx !== -1) fieldPlayers.splice(idx, 1);
+    } else if (fromSource === 'sub') {
+        const idx = subPlayers.findIndex(p => p.id === player.id);
+        if (idx !== -1) subPlayers.splice(idx, 1);
+    } else if (fromSource === 'reserve') {
+        const idx = reservePlayers.findIndex(p => p.id === player.id);
+        if (idx !== -1) reservePlayers.splice(idx, 1);
+    }
+
+    // 대상 그룹에 추가
+    const p = { ...player };
+    if (toGroup === 'starter') {
+        p.x = p.x || 50;
+        p.y = p.y || 50;
+        fieldPlayers.push(p);
+    } else if (toGroup === 'sub') {
+        p.x = undefined;
+        p.y = undefined;
+        subPlayers.push(p);
+    } else if (toGroup === 'reserve') {
+        p.x = undefined;
+        p.y = undefined;
+        reservePlayers.push(p);
+    }
+}
+
+// 선수 삭제 (교체/후보만 가능)
+function deletePlayer(playerId, group) {
+    if (!confirm('선수를 삭제하시겠습니까?')) return;
+
+    if (group === 'sub') {
+        subPlayers = subPlayers.filter(p => p.id !== playerId);
+    } else {
+        reservePlayers = reservePlayers.filter(p => p.id !== playerId);
+    }
+
+    updateSubPlayers();
+    updateTotalPlayers();
 }
 
 // 플레이어 원 생성
@@ -167,7 +263,6 @@ function createPlayerCircle(player) {
     const circle = document.createElement('div');
     circle.className = 'player-circle';
 
-    // 저장된 위치가 있으면 사용, 없으면 중앙에 배치
     const posX = player.x !== undefined ? player.x : 50;
     const posY = player.y !== undefined ? player.y : 50;
 
@@ -177,11 +272,9 @@ function createPlayerCircle(player) {
     circle.dataset.playerId = player.id;
 
     circle.innerHTML = `
-        <div class="player-number">#${player.number}</div>
         <div class="player-name">${player.name}</div>
     `;
 
-    // 드래그 시작
     circle.addEventListener('dragstart', (e) => {
         draggedElement = player;
         dragSource = 'field';
@@ -190,7 +283,6 @@ function createPlayerCircle(player) {
         circle.classList.add('dragging');
     });
 
-    // 드래그 종료
     circle.addEventListener('dragend', () => {
         circle.classList.remove('dragging');
     });
@@ -203,13 +295,11 @@ function setupFieldDragDrop() {
     const field = document.getElementById('soccerField');
     if (!field) return;
 
-    // 필드에 드래그 오버
     field.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
     });
 
-    // 필드에 드롭
     field.addEventListener('drop', (e) => {
         e.preventDefault();
 
@@ -219,7 +309,6 @@ function setupFieldDragDrop() {
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-        // SUB에서 필드로 이동
         if (dragSource === 'sub') {
             const playerIndex = subPlayers.findIndex(p => p.id === draggedElement.id);
             if (playerIndex !== -1) {
@@ -228,9 +317,15 @@ function setupFieldDragDrop() {
                 player.y = Math.max(5, Math.min(95, y));
                 fieldPlayers.push(player);
             }
-        }
-        // 필드 내에서 이동
-        else if (dragSource === 'field') {
+        } else if (dragSource === 'reserve') {
+            const playerIndex = reservePlayers.findIndex(p => p.id === draggedElement.id);
+            if (playerIndex !== -1) {
+                const player = reservePlayers.splice(playerIndex, 1)[0];
+                player.x = Math.max(5, Math.min(95, x));
+                player.y = Math.max(5, Math.min(95, y));
+                fieldPlayers.push(player);
+            }
+        } else if (dragSource === 'field') {
             const player = fieldPlayers.find(p => p.id === draggedElement.id);
             if (player) {
                 player.x = Math.max(5, Math.min(95, x));
@@ -246,18 +341,17 @@ function setupFieldDragDrop() {
         updateTotalPlayers();
     });
 
-    // SUB 섹션 드래그 앤 드롭 설정
+    // 선수 명단 패널 드래그 앤 드롭 (필드 → 교체)
     const subSection = document.getElementById('subPlayers');
     if (!subSection) return;
 
     subSection.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        subSection.style.backgroundColor = '#ffe0b2';
+        subSection.style.backgroundColor = '#f0f7ee';
     });
 
     subSection.addEventListener('dragleave', (e) => {
-        // SUB 영역을 완전히 벗어났을 때만 배경색 제거
         const rect = subSection.getBoundingClientRect();
         if (e.clientX < rect.left || e.clientX >= rect.right ||
             e.clientY < rect.top || e.clientY >= rect.bottom) {
@@ -269,14 +363,13 @@ function setupFieldDragDrop() {
         e.preventDefault();
         subSection.style.backgroundColor = '';
 
-        // 필드에서 SUB로 이동
         if (dragSource === 'field' && draggedElement) {
             const playerIndex = fieldPlayers.findIndex(p => p.id === draggedElement.id);
             if (playerIndex !== -1) {
                 const player = fieldPlayers.splice(playerIndex, 1)[0];
                 player.x = undefined;
                 player.y = undefined;
-                subPlayers.push(player);
+                subPlayers.push(player);  // 필드 → 교체
             }
         }
 
@@ -289,7 +382,7 @@ function setupFieldDragDrop() {
     });
 }
 
-// 선수 추가 함수
+// 선수 추가 (후보로 추가)
 function addNewPlayer() {
     const input = document.getElementById('newPlayerName');
     const name = input.value.trim();
@@ -299,39 +392,31 @@ function addNewPlayer() {
         return;
     }
 
-    // 새 선수 번호 생성 (현재 최대 번호 + 1)
-    const allPlayers = [...fieldPlayers, ...subPlayers];
+    const allPlayers = [...fieldPlayers, ...subPlayers, ...reservePlayers];
     const maxNumber = allPlayers.length > 0
         ? Math.max(...allPlayers.map(p => p.number))
         : 0;
     const newNumber = maxNumber + 1;
 
-    // 새 선수 객체 생성
     const newPlayer = {
         id: newNumber,
         number: newNumber,
         name: name
     };
 
-    // SUB 목록에 추가
-    subPlayers.push(newPlayer);
-
-    // 입력 필드 초기화
+    reservePlayers.push(newPlayer);
     input.value = '';
 
-    // UI 업데이트
     updateSubPlayers();
     updateTotalPlayers();
-
-    console.log('새 선수 추가:', newPlayer);
 }
 
 // 전체 선수 수 업데이트
 function updateTotalPlayers() {
     const totalElement = document.getElementById('totalPlayers');
     if (totalElement) {
-        const total = fieldPlayers.length + subPlayers.length;
-        totalElement.textContent = `전체 선수: ${total}명 (필드: ${fieldPlayers.length}명, SUB: ${subPlayers.length}명)`;
+        const total = fieldPlayers.length + subPlayers.length + reservePlayers.length;
+        totalElement.textContent = `전체 선수: ${total}명 (선발: ${fieldPlayers.length}명, 교체: ${subPlayers.length}명, 후보: ${reservePlayers.length}명)`;
     }
 }
 
@@ -339,14 +424,15 @@ function updateTotalPlayers() {
 function saveTeamSetup() {
     const teamName = localStorage.getItem('currentTeamName') || '우리팀';
 
-    // 모든 선수에 onField 속성 추가
     const allPlayers = [];
 
     fieldPlayers.forEach(player => {
         allPlayers.push({
+            id: player.number,
             number: player.number,
             name: player.name,
             onField: true,
+            role: 'starter',
             x: player.x,
             y: player.y
         });
@@ -354,9 +440,21 @@ function saveTeamSetup() {
 
     subPlayers.forEach(player => {
         allPlayers.push({
+            id: player.number,
             number: player.number,
             name: player.name,
-            onField: false
+            onField: false,
+            role: 'sub'
+        });
+    });
+
+    reservePlayers.forEach(player => {
+        allPlayers.push({
+            id: player.number,
+            number: player.number,
+            name: player.name,
+            onField: false,
+            role: 'reserve'
         });
     });
 
@@ -365,18 +463,20 @@ function saveTeamSetup() {
         players: allPlayers,
         fieldPlayers: fieldPlayers,
         subPlayers: subPlayers,
+        reservePlayers: reservePlayers,
         savedDate: new Date().toISOString()
     };
 
-    // teamSetup과 currentTeam 모두 업데이트
     localStorage.setItem('teamSetup', JSON.stringify(setup));
 
-    // currentTeam도 업데이트 (선수 목록이 변경되었을 수 있으므로)
     const currentTeam = {
         name: teamName,
         players: allPlayers.map(p => ({
+            id: p.number,
             number: p.number,
-            name: p.name
+            name: p.name,
+            onField: p.onField,
+            role: p.role
         })),
         createdDate: new Date().toISOString()
     };
@@ -385,7 +485,6 @@ function saveTeamSetup() {
     const message = document.getElementById('successMessage');
     if (message) {
         message.style.display = 'block';
-
         setTimeout(() => {
             message.style.display = 'none';
             window.location.href = 'index.html';
